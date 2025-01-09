@@ -1,0 +1,169 @@
+RELATÓRIO DE INSTALAÇÃO DO NAGIOS NA AWS 
+
+Vamos detalhar cada um dos comandos do passo a passo para instalar e configurar o Nagios Core:
+Lembrando, nesse passo a passo estamos utilizando a versão do Ubuntu 22.04 instalada em uma máquina da AWS.
+
+1. Instalação dos pacotes necessários
+
+sudo apt install wget unzip curl openssl build-essential libgd-dev libssl-dev libapache2-mod-php php-gd php apache2 -y
+//Este comando instala pacotes essenciais para a instalação do Nagios
+
+2. Download do Nagios Core
+wget https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz
+//Aqui estamos baixando a versão do Nagios Core na forma de um arquivo comprimido “.tar.gz” da página oficial.
+
+3. Extração dos arquivos baixados
+sudo tar -zxvf nagios-4.4.6.tar.gz
+//Descomprime o arquivo baixado para que possamos acessar os arquivos de instalação.
+
+4. Navegar para o diretório extraído
+cd nagios-4.4.6
+//Entra no diretório criado após a extração, onde estão os arquivos de instalação.
+
+5. Executar o script de configuração
+sudo ./configure
+//Este script verifica se o sistema tem todos os pacotes e dependências necessários e configura o ambiente para a instalação do Nagios.
+
+6. Compilação do Nagios e CGIs (Common Gateway Interface)
+sudo make all
+//Compila o código-fonte do Nagios e seus scripts CGI, que são usados para gerar conteúdo dinâmico na interface web.
+
+7. Criação dos grupos e usuários do Nagios
+sudo make install-groups-users
+//Cria um grupo e um usuário para o Nagios, garantindo que os processos rodem com privilégios mínimos, aumentando a segurança.
+
+8. Adicionar `www-data` ao grupo do Nagios
+sudo usermod -a -G nagios www-data
+//Inclui o usuário do Apache, “www-data” , ao grupo do Nagios para que ele possa acessar e rodar os arquivos.
+
+9. Instalação do Nagios
+sudo make install
+//Copia os arquivos do Nagios para os diretórios apropriados, instalando efetivamente o sistema.
+
+10. Inicialização dos scripts de configuração de inicialização
+sudo make install-init
+//Instala os scripts que iniciam o Nagios automaticamente durante o boot do sistema.
+
+11. Configuração das permissões para o diretório de comandos
+sudo make install-commandmode
+//Define permissões para o diretório de comandos do Nagios, permitindo que comandos externos sejam executados de forma segura.
+
+12. Instalação de arquivos de configuração de exemplo
+sudo make install-config
+//Instala arquivos de configuração de exemplo, que facilitam a configuração inicial.
+
+13. Instalação dos arquivos do Apache
+sudo make install-webconf
+//Configura o Apache para servir a interface web do Nagios, permitindo o acesso via navegador.
+
+14. Habilitar o modo “rewrite” no Apache
+sudo a2enmod rewrite
+//Ativa o módulo de reescrita de URL no Apache, permitindo URLs mais amigáveis.
+
+15. Habilitar a configuração CGI
+sudo a2enmod cgi
+//Ativa o módulo CGI no Apache, necessário para que o Nagios execute scripts CGI.
+
+16. Reiniciar o serviço Apache
+sudo systemctl restart apache2
+//Reinicia o Apache para aplicar todas as configurações feitas.
+
+17. Criação do usuário de acesso e configuração de senha
+sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users admin
+//Cria um usuário `admin` para acessar a interface web do Nagios e define uma senha para ele, aqui utilizei a senha “nagiosadmin”
+
+18. Baixar o pacote de plugins do Nagios
+cd ~/
+wget https://nagios-plugins.org/download/nagios-plugins-2.3.3.tar.gz
+//Baixa o pacote dos plugins, que adicionam funcionalidades adicionais para monitoramento.
+
+19. Extrair os plugins baixados
+sudo tar -zxvf nagios-plugins-2.3.3.tar.gz
+//Descomprime o arquivo de plugins.
+
+20. Navegar para o diretório dos plugins
+cd nagios-plugins-2.3.3/
+//Entra no diretório onde estão os arquivos dos plugins.
+
+21. Configuração dos plugins
+sudo ./configure --with-nagios-user=nagios --with-nagios-group=nagios
+//Prepara os plugins para instalação e configura o usuário e grupo que irão executá-los.
+
+22. Compilação dos plugins
+sudo make
+//Compila os arquivos dos plugins.
+
+23. Instalação dos plugins
+sudo make install
+//Copia os plugins para os diretórios apropriados.
+
+24. Verificação da configuração do Nagios
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+//Verifica o arquivo de configuração principal, `nagios.cfg`, para detectar erros antes de iniciar o serviço.
+
+25. Iniciar o serviço Nagios
+sudo systemctl start nagios
+//Inicia o serviço Nagios, ativando a interface de monitoramento.
+
+26. Habilitar o Nagios para iniciar com o sistema
+sudo systemctl enable nagios
+//Configura o sistema para iniciar o serviço do Nagios automaticamente no boot.
+
+Neste ponto o Nagios está ativo na sua máquina Ubuntu, agora vamos ver a interface dele pela internet.
+27. Na AWS selecione a sua máquina
+
+28. Clique na aba Segurança
+29. Clique neste link no Grupo de Segurança
+
+30. Clique em Regras de Saída
+
+31. Selecione e clique em Editar Regras de Saída
+
+32. Clique em Adicionar Regra
+
+33. Selecione HTTP e Qualquer local-IPV4
+
+34. Adicione mais uma regra e selecione HTTPS e Qualquer local-IPV4
+
+35. Agora clique em Salvar Regras
+
+//Pronto, regra de saída configurada!
+
+37. Agora volte na tela inicial das instâncias com a sua selecionada e na aba Detalhes copie seu Endereço IPV4 público
+
+38. Agora abra uma página na web e escreva http:// e cole o ip que você copiou!
+
+39. Dê Enter e irá aparecer a tela do Apache
+
+40. Agora insira /nagios após o endereço e dê Enter
+
+41. Ele irá solicitar o usuário e senha configurado, no meu caso o login é admin e a senha é nagiosadmin, coloque e Enter
+
+42. Essa é a interface do Nagios, clique em Host Groups
+
+43. Aqui apresenta os Hosts (máquinas) sendo monitoradas, se a sua máquina aparecer, você configurou tudo corretamente!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
